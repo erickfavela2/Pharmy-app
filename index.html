@@ -7,12 +7,22 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="header">
-  <div style="width:70px;display:flex;align-items:center">
-    <button id="sound-btn" onclick="toggleSound()" style="background:rgba(255,255,255,.22);border:none;border-radius:50%;width:38px;height:38px;font-size:1.1rem;line-height:1;cursor:pointer;color:#fff;padding:0" aria-label="Sound on, tap to mute">🔊</button>
+
+<div id="profile-overlay" class="profile-overlay" style="display:none">
+  <div class="profile-overlay-inner">
+    <div class="profile-overlay-logo">💊 Pharmy</div>
+    <div id="profile-overlay-content"></div>
   </div>
+</div>
+
+<div id="profile-dropdown" class="profile-dropdown" style="display:none"></div>
+
+<div class="header">
+  <button id="avatar-btn" class="avatar-btn" onclick="toggleProfileDropdown()">
+    <div id="avatar-circle" class="avatar-circle">?</div>
+  </button>
   <div style="flex:1;text-align:center"><h1>💊 Pharmy</h1></div>
-  <div class="progress-pill" id="global-progress">0 known</div>
+  <div id="streak-pill" class="streak-pill" style="display:none">🔥 0</div>
 </div>
 
 <div class="cat-bar">

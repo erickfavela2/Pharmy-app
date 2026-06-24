@@ -12,21 +12,20 @@ let state = {
   currentOpts: []
 };
 
-function loadStorage(){
-  try{ return JSON.parse(localStorage.getItem('mediclearn')||'{}'); }catch(e){ return {}; }
-}
-function saveStorage(s){ try{ localStorage.setItem('mediclearn',JSON.stringify(s)); }catch(e){} }
-let store = loadStorage();
+// ─── STORAGE v2 ──────────────────────────────────────────────────────────────
+const AVATAR_COLORS=["#0891b2","#7c3aed","#059669","#dc2626","#d97706","#db2777"];
+function loadV2(){ try{ return JSON.parse(localStorage.getItem('mediclearn_v2')||'null'); }catch(e){ return null; } }
+function saveV2(data){ try{ localStorage.setItem('mediclearn_v2',JSON.stringify(data)); }catch(e){} }
+function activeProfile(){ const d=loadV2(); if(!d) return null; return d.profiles.find(p=>p.id===d.activeProfile)||null; }
+function getStore(){ const p=activeProfile(); return p?p.store:{}; }
+function saveStore(store){ const d=loadV2(); const p=d&&d.profiles.find(q=>q.id===d.activeProfile); if(!p) return; p.store=store; saveV2(d); }
 
 function filteredCards(){
   if(state.cat==="All") return CARDS;
   return CARDS.filter(c=>c.cat===state.cat);
 }
 
-function updateGlobalProgress(){
-  const known = Object.keys(store).filter(k=>k.startsWith('known_')&&store[k]).length;
-  document.getElementById('global-progress').textContent = known+' known';
-}
+function updateGlobalProgress(){ renderHeader(); }
 
 // ─── CATEGORY DROPDOWN ──────────────────────────────────────────────────────
 function renderTabs(){
@@ -59,8 +58,8 @@ function selectCat(c){ state.cat=c; state.cardIndex=0; state.flipped=false; docu
 // ─── STATS BAR ──────────────────────────────────────────────────────────────
 function renderStatsBar(){
   const cards = filteredCards();
-  const known = cards.filter(c=>store['known_'+c.id]).length;
-  const seen = cards.filter(c=>store['seen_'+c.id]).length;
+  const st=getStore();
+  const known = cards.filter(c=>st['known_'+c.id]).length;
   document.getElementById('stats-bar').innerHTML =
     `<div class="stat">Total: <span>${cards.length}</span></div>
      <div class="stat" style="color:var(--green)">Known: <span style="color:var(--green)">${known}</span></div>
@@ -86,8 +85,9 @@ function renderFlash(){
   if(!cards.length){ document.getElementById('flashcard-mode').innerHTML='<div class="empty"><h3>No cards in this category</h3></div>'; return; }
   const idx = Math.min(state.cardIndex, cards.length-1);
   const card = cards[idx];
-  store['seen_'+card.id]=true; saveStorage(store); renderStatsBar();
-  const known = store['known_'+card.id];
+  const st=getStore(); st['seen_'+card.id]=true; saveStore(st); renderStatsBar();
+  const known = st['known_'+card.id];
+  const _prof=activeProfile(); const flagged=_prof&&_prof.flagged&&_prof.flagged.includes(card.id);
 
   const genericPills = card.generics.length? `<div class="pill-list">${card.generics.map(g=>`<span class="pill generic">${g}</span>`).join('')}</div>`:'';
   const tradePills = card.trades.length? `<div class="pill-list">${card.trades.map(t=>`<span class="pill trade">${t}</span>`).join('')}</div>`:'';
@@ -102,6 +102,7 @@ function renderFlash(){
     ${card.intro?`<div class="section-body" style="margin-bottom:12px">${card.intro}</div>`:''}
     ${(card.groups||[]).map(g=>`<div class="section"><div class="section-title">${g.label}</div><ul class="crit-list">${g.items.map(i=>`<li>${i}</li>`).join('')}</ul></div>`).join('')}
     ${card.note?`<div class="section"><div class="section-title">Clinical Pearl</div><div class="crit-note">🧠 ${card.note}</div></div>`:''}
+    <div class="flag-row"><button class="flag-btn${flagged?' flagged':''}" onclick="toggleFlagCard('${card.id}')">⚑ ${flagged?'Flagged':'Flag for Review'}</button></div>
   </div>`:'';
 
   document.getElementById('flashcard-mode').innerHTML = `
@@ -124,6 +125,7 @@ function renderFlash(){
     ${card.patientEd.length?`<div class="section"><div class="section-title">Patient Education</div><ul style="padding-left:16px;font-size:.82rem;line-height:1.55">${pedList}</ul></div>`:''}
     ${card.nursing.length?`<div class="section"><div class="section-title">Nursing Considerations</div><ul style="padding-left:16px;font-size:.82rem;line-height:1.55">${nursingList}</ul></div>`:''}
     ${card.mnemonic?`<div class="section"><div class="section-title">Mnemonic / Memory Tip</div>${mnemonicBox}</div>`:''}
+    <div class="flag-row"><button class="flag-btn${flagged?' flagged':''}" onclick="toggleFlagCard('${card.id}')">⚑ ${flagged?'Flagged':'Flag for Review'}</button></div>
   </div>`):''}
 </div>
 <div class="card-nav">
@@ -138,11 +140,11 @@ function renderFlash(){
 </div>`;
 }
 
-function flipCard(){ state.flipped=!state.flipped; renderFlash(); }
+function flipCard(){ state.flipped=!state.flipped; if(state.flipped) checkStreak('flip'); renderFlash(); }
 function nextCard(){ const c=filteredCards(); state.cardIndex=(state.cardIndex+1)%c.length; state.flipped=false; renderFlash(); }
 function prevCard(){ const c=filteredCards(); state.cardIndex=(state.cardIndex-1+c.length)%c.length; state.flipped=false; renderFlash(); }
 function goCard(i){ state.cardIndex=i; state.flipped=false; renderFlash(); }
-function toggleKnown(id){ store['known_'+id]=!store['known_'+id]; saveStorage(store); renderFlash(); renderStatsBar(); updateGlobalProgress(); }
+function toggleKnown(id){ const st=getStore(); st['known_'+id]=!st['known_'+id]; saveStore(st); renderFlash(); renderStatsBar(); renderHeader(); }
 function shuffleCards(){
   // Randomize current index
   const c=filteredCards();
@@ -241,6 +243,9 @@ function checkMulti(){
   const fullyCorrect = wrongMarked.length===0 && missed.length===0 && rightMarked.length===correctSet.length;
   playSound(fullyCorrect);
   if(fullyCorrect) state.quizScore++;
+  updateAnalytics(q, fullyCorrect);
+  if(!fullyCorrect) autoFlagFromQuiz(q);
+  checkStreak('answer');
   let html = fullyCorrect
     ? '✅ Correct! You selected every right answer and nothing extra.'
     : '❌ Not quite — review the breakdown below:';
@@ -327,6 +332,9 @@ function answerQuiz(optIdx){
   });
   playSound(isCorrect);
   if(isCorrect) state.quizScore++;
+  updateAnalytics(q, isCorrect);
+  if(!isCorrect) autoFlagFromQuiz(q);
+  checkStreak('answer');
   const exp = document.getElementById('quiz-explain');
   exp.textContent = (isCorrect?'✅ Correct! ':'❌ Incorrect. ')+q.explain;
   exp.classList.add('show');
@@ -336,9 +344,204 @@ function answerQuiz(optIdx){
 function nextQuestion(){ state.quizIndex++; renderQuiz(); }
 function restartQuiz(){ state.quizIndex=0; state.quizScore=0; state.quizQuestions=buildQuiz(); renderQuiz(); }
 
+// ─── PROFILE SYSTEM ──────────────────────────────────────────────────────────
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function checkStreak(type){
+  const d=loadV2();
+  const p=d&&d.profiles.find(q=>q.id===d.activeProfile);
+  if(!p) return;
+  const today=todayStr();
+  if((p.todayCountDate||'')!==today){ p.todayFlips=0; p.todayAnswers=0; p.todayCountDate=today; }
+  if(type==='flip') p.todayFlips=(p.todayFlips||0)+1;
+  if(type==='answer') p.todayAnswers=(p.todayAnswers||0)+1;
+  const thresholdMet=(p.todayFlips||0)>=5||(p.todayAnswers||0)>=10;
+  if(thresholdMet && p.lastActiveDate!==today){
+    const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+    p.streak = p.lastActiveDate===yesterday ? (p.streak||0)+1 : 1;
+    p.lastActiveDate=today;
+  }
+  saveV2(d);
+  renderHeader();
+}
+
+function questionId(q){ return q.q.slice(0,40).replace(/\W+/g,'_').toLowerCase(); }
+
+function updateAnalytics(q, isCorrect){
+  const d=loadV2();
+  const p=d&&d.profiles.find(x=>x.id===d.activeProfile);
+  if(!p) return;
+  const qid=questionId(q);
+  if(!p.analytics[qid]) p.analytics[qid]={correct:0,wrong:0};
+  if(isCorrect) p.analytics[qid].correct++; else p.analytics[qid].wrong++;
+  saveV2(d);
+}
+
+function autoFlagFromQuiz(q){
+  const d=loadV2();
+  const p=d&&d.profiles.find(x=>x.id===d.activeProfile);
+  if(!p) return;
+  const catCard=CARDS.find(c=>c.cat===q.cat);
+  if(!catCard||p.flagged.includes(catCard.id)) return;
+  p.flagged.unshift(catCard.id);
+  saveV2(d);
+}
+
+function toggleFlagCard(id){
+  const d=loadV2();
+  const p=d&&d.profiles.find(x=>x.id===d.activeProfile);
+  if(!p) return;
+  const idx=p.flagged.indexOf(id);
+  if(idx>=0) p.flagged.splice(idx,1); else p.flagged.unshift(id);
+  saveV2(d);
+  renderFlash();
+}
+
+function profileInitials(name){
+  const parts=name.trim().split(/\s+/);
+  return parts.length>=2?(parts[0][0]+parts[1][0]).toUpperCase():(parts[0][0]||'?').toUpperCase();
+}
+
+function renderHeader(){
+  const p=activeProfile();
+  const circle=document.getElementById('avatar-circle');
+  if(circle){ circle.textContent=p?profileInitials(p.name):'?'; circle.style.background=p?p.color:AVATAR_COLORS[0]; }
+  const pill=document.getElementById('streak-pill');
+  if(pill){ if(p&&p.streak>0){ pill.textContent='🔥 '+p.streak; pill.style.display=''; } else { pill.style.display='none'; } }
+}
+
+function toggleProfileDropdown(){
+  const dd=document.getElementById('profile-dropdown');
+  if(dd.style.display==='none'||!dd.style.display){ renderProfileDropdown(); dd.style.display=''; }
+  else { dd.style.display='none'; }
+}
+
+function closeProfileDropdown(){
+  const dd=document.getElementById('profile-dropdown');
+  if(dd) dd.style.display='none';
+}
+
+function renderProfileDropdown(){
+  const d=loadV2();
+  const profiles=d?d.profiles:[];
+  const dd=document.getElementById('profile-dropdown');
+  const soundLabel=_soundOn?'🔊 Sound: On':'🔇 Sound: Off';
+  let html='<div class="pdd-section-label">PROFILES</div>';
+  profiles.forEach(function(p){
+    const isActive=d&&p.id===d.activeProfile;
+    html+='<div class="pdd-item'+(isActive?' pdd-item-active':'')+'" onclick="selectProfile(\''+p.id+'\');closeProfileDropdown()">'
+      +'<span class="pdd-dot" style="background:'+p.color+'"></span>'+p.name
+      +(isActive?' <span class="pdd-check">✓</span>':'')+'</div>';
+  });
+  html+='<div class="pdd-divider"></div>'
+    +'<div class="pdd-item" onclick="toggleSoundFromDropdown()">'+soundLabel+'</div>'
+    +'<div class="pdd-item" onclick="showProfileOverlay();closeProfileDropdown()">🚪 Switch Profile</div>';
+  dd.innerHTML=html;
+}
+
+function toggleSoundFromDropdown(){ toggleSound(); renderProfileDropdown(); }
+
+document.addEventListener('click',function(e){
+  const dd=document.getElementById('profile-dropdown');
+  const avatarBtn=document.getElementById('avatar-btn');
+  if(dd&&avatarBtn&&dd.style.display!=='none'&&!dd.contains(e.target)&&!avatarBtn.contains(e.target)) dd.style.display='none';
+});
+document.addEventListener('keydown',function(e){ if(e.key==='Escape') closeProfileDropdown(); });
+
+function selectProfile(id){
+  const d=loadV2();
+  if(!d) return;
+  d.activeProfile=id;
+  const p=d.profiles.find(x=>x.id===id);
+  if(p){ const today=todayStr(); if((p.todayCountDate||'')!==today){ p.todayFlips=0; p.todayAnswers=0; p.todayCountDate=today; } }
+  saveV2(d);
+  hideProfileOverlay();
+  renderHeader();
+  renderStatsBar();
+  renderCurrentMode();
+}
+
+function createProfile(name){
+  name=(name||'').trim();
+  const errEl=document.getElementById('profile-name-error');
+  if(!name){ if(errEl) errEl.textContent="Name can't be empty"; return; }
+  if(name.length>24){ if(errEl) errEl.textContent='Name must be 24 characters or less'; return; }
+  const d=loadV2()||{activeProfile:null,profiles:[]};
+  if(d.profiles.length>=4) return;
+  const slug=name.toLowerCase().replace(/\W/g,'').slice(0,6);
+  const id=slug+'-'+Math.random().toString(36).slice(2,6);
+  const color=AVATAR_COLORS[d.profiles.length%AVATAR_COLORS.length];
+  d.profiles.push({id,name,color,createdAt:todayStr(),lastActiveDate:'',streak:0,todayFlips:0,todayAnswers:0,todayCountDate:'',store:{},analytics:{},flagged:[]});
+  d.activeProfile=id;
+  saveV2(d);
+  hideProfileOverlay();
+  renderHeader();
+  renderStatsBar();
+  renderCurrentMode();
+}
+
+function showProfileOverlay(){
+  renderProfileOverlay();
+  const ov=document.getElementById('profile-overlay');
+  ov.style.display='flex';
+  requestAnimationFrame(function(){ ov.classList.add('visible'); });
+}
+
+function hideProfileOverlay(){
+  const ov=document.getElementById('profile-overlay');
+  ov.classList.remove('visible');
+  setTimeout(function(){ ov.style.display='none'; },200);
+}
+
+function renderProfileOverlay(){
+  const d=loadV2();
+  const profiles=d?d.profiles:[];
+  const content=document.getElementById('profile-overlay-content');
+  if(profiles.length===0){
+    content.innerHTML='<p class="profile-overlay-sub">Create a profile to start tracking your progress.</p>'
+      +'<input class="profile-name-input" id="profile-name-input" type="text" placeholder="Your name" maxlength="24" autocomplete="off"'
+      +' onkeydown="if(event.key===\'Enter\') createProfile(this.value)">'
+      +'<div class="profile-name-error" id="profile-name-error"></div>'
+      +'<button class="profile-create-btn" onclick="createProfile(document.getElementById(\'profile-name-input\').value)">Create Profile</button>';
+    requestAnimationFrame(function(){ const inp=document.getElementById('profile-name-input'); if(inp) inp.focus(); });
+  } else {
+    let tilesHtml=profiles.map(function(p){
+      return '<div class="profile-tile" onclick="selectProfile(\'' + p.id + '\')">'
+        +'<div class="profile-tile-avatar" style="background:'+p.color+'">'+profileInitials(p.name)+'</div>'
+        +'<div class="profile-tile-name">'+p.name+'</div>'
+        +(p.streak>0?'<div class="profile-tile-streak">🔥 '+p.streak+'</div>':'')
+        +'</div>';
+    }).join('');
+    if(profiles.length<4){
+      tilesHtml+='<div class="profile-tile profile-tile-add" onclick="showAddProfileForm()">'
+        +'<div class="profile-tile-avatar profile-tile-add-icon">+</div>'
+        +'<div class="profile-tile-name">Add</div></div>';
+    }
+    content.innerHTML='<p class="profile-overlay-sub">Who\'s studying?</p>'
+      +'<div class="profile-grid">'+tilesHtml+'</div>'
+      +'<div id="add-profile-form" style="display:none">'
+      +'<input class="profile-name-input" id="profile-name-input" type="text" placeholder="New profile name" maxlength="24" autocomplete="off"'
+      +' onkeydown="if(event.key===\'Enter\') createProfile(this.value)">'
+      +'<div class="profile-name-error" id="profile-name-error"></div>'
+      +'<button class="profile-create-btn" onclick="createProfile(document.getElementById(\'profile-name-input\').value)">Create Profile</button>'
+      +'</div>';
+  }
+}
+
+function showAddProfileForm(){
+  const form=document.getElementById('add-profile-form');
+  if(form){ form.style.display=''; const inp=document.getElementById('profile-name-input'); if(inp) inp.focus(); }
+}
+
+function initProfiles(){
+  const d=loadV2();
+  if(!d||!d.activeProfile){ showProfileOverlay(); }
+  else { hideProfileOverlay(); renderHeader(); }
+}
+
 // ─── INIT ────────────────────────────────────────────────────────────────────
+initProfiles();
 renderTabs();
 renderStatsBar();
 renderFlash();
-updateGlobalProgress();
 updateSoundBtn();
