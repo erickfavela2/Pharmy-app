@@ -53,7 +53,8 @@ document.addEventListener('click',function(e){
   if(bar && dd && !bar.contains(e.target)) dd.classList.remove('open');
 });
 
-function selectCat(c){ state.cat=c; state.cardIndex=0; state.flipped=false; document.getElementById('cat-dropdown').classList.remove('open'); renderTabs(); renderStatsBar(); renderCurrentMode(); }
+function selectCat(c){ state.cat=c; state.cardIndex=0; state.flipped=false; document.getElementById('cat-dropdown').classList.remove('open'); updateCatBtn(); renderTabs(); renderStatsBar(); renderCurrentMode(); }
+function updateCatBtn(){ const b=document.getElementById('cat-btn'); if(b) b.textContent=state.cat+' ▾'; }
 
 // ─── STATS BAR ──────────────────────────────────────────────────────────────
 function renderStatsBar(){
@@ -61,9 +62,9 @@ function renderStatsBar(){
   const st=getStore();
   const known = cards.filter(c=>st['known_'+c.id]).length;
   document.getElementById('stats-bar').innerHTML =
-    `<div class="stat">Total: <span>${cards.length}</span></div>
-     <div class="stat" style="color:var(--green)">Known: <span style="color:var(--green)">${known}</span></div>
-     <div class="stat" style="color:var(--accent)">Left: <span style="color:var(--accent)">${cards.length-known}</span></div>`;
+    `<div class="stat">Total: <span>${cards.length}</span></div>`+
+    `<div class="stat">Known: <span>${known}</span></div>`+
+    `<div class="stat">Left: <span>${cards.length-known}</span></div>`;
 }
 
 // ─── MODE TOGGLE ─────────────────────────────────────────────────────────────
@@ -73,6 +74,7 @@ function setMode(m){
   document.getElementById('btn-quiz').classList.toggle('active',m==='quiz');
   document.getElementById('flashcard-mode').style.display=m==='flash'?'':'none';
   document.getElementById('quiz-mode').style.display=m==='quiz'?'':'none';
+  const bb=document.getElementById('bottom-bar'); if(bb) bb.style.display=m==='flash'?'':'none';
   renderTabs();
   if(m==='quiz'){ state.quizIndex=0; state.quizScore=0; state.quizQuestions=buildQuiz(); renderQuiz(); }
   else renderFlash();
@@ -106,8 +108,8 @@ function renderFlash(){
   </div>`:'';
 
   document.getElementById('flashcard-mode').innerHTML = `
-<div class="card-counter">${idx+1} of ${cards.length}</div>
-<div class="card-banner-wrap">
+<div class="card-counter">${idx+1} / ${cards.length}</div>
+<div class="soma-card">
   <div class="card-front-banner">
     <div class="banner-cat-label">${card.cat}</div>
     <h2 class="banner-title">${card.title}</h2>
@@ -127,22 +129,26 @@ function renderFlash(){
     ${card.mnemonic?`<div class="section"><div class="section-title">Mnemonic / Memory Tip</div>${mnemonicBox}</div>`:''}
     <div class="flag-row"><button class="flag-btn${flagged?' flagged':''}" onclick="toggleFlagCard('${card.id}')">⚑ ${flagged?'Flagged':'Flag for Review'}</button></div>
   </div>`):''}
-</div>
-<div class="card-nav">
-  <button class="nav-btn" onclick="prevCard()">← Prev</button>
-  <button class="nav-btn" onclick="nextCard()">Next →</button>
-</div>
-<div class="known-row">
-  <button class="known-btn${known?' known':''}" onclick="toggleKnown('${card.id}')">
-    ${known?'Known':'Mark as Known'}
-  </button>
-  <button class="shuffle-btn" onclick="shuffleCards()">🔀 Shuffle</button>
 </div>`;
+  renderBottomBar(card, known);
 }
 
 function flipCard(){ state.flipped=!state.flipped; if(state.flipped) checkStreak('flip'); renderFlash(); }
 function nextCard(){ const c=filteredCards(); state.cardIndex=(state.cardIndex+1)%c.length; state.flipped=false; renderFlash(); }
 function prevCard(){ const c=filteredCards(); state.cardIndex=(state.cardIndex-1+c.length)%c.length; state.flipped=false; renderFlash(); }
+function renderBottomBar(card, known){
+  const bb=document.getElementById('bottom-bar');
+  if(!bb) return;
+  if(!card){ bb.innerHTML=''; return; }
+  bb.innerHTML=`<div class="bottom-bar-nav">
+  <button class="nav-btn" onclick="prevCard()">← Prev</button>
+  <button class="known-btn${known?' known':''}" onclick="toggleKnown('${card.id}')">${known?'✓ Known':'Mark Known'}</button>
+  <button class="nav-btn" onclick="nextCard()">Next →</button>
+</div>
+<div class="bottom-bar-secondary">
+  <button class="shuffle-btn" onclick="shuffleCards()">🔀 Shuffle</button>
+</div>`;
+}
 function goCard(i){ state.cardIndex=i; state.flipped=false; renderFlash(); }
 function toggleKnown(id){ const st=getStore(); st['known_'+id]=!st['known_'+id]; saveStore(st); renderFlash(); renderStatsBar(); renderHeader(); }
 function shuffleCards(){
@@ -541,6 +547,7 @@ function initProfiles(){
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 initProfiles();
+updateCatBtn();
 renderTabs();
 renderStatsBar();
 renderFlash();

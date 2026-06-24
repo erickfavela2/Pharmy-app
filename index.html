@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>💊 Pharmy</title>
+<title>Soma</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="profile-overlay" class="profile-overlay" style="display:none">
   <div class="profile-overlay-inner">
-    <div class="profile-overlay-logo">💊 Pharmy</div>
+    <div class="profile-overlay-logo">Soma</div>
     <div id="profile-overlay-content"></div>
   </div>
 </div>
@@ -21,25 +21,28 @@
   <button id="avatar-btn" class="avatar-btn" onclick="toggleProfileDropdown()">
     <div id="avatar-circle" class="avatar-circle">?</div>
   </button>
-  <div style="flex:1;text-align:center"><h1>💊 Pharmy</h1></div>
-  <div id="streak-pill" class="streak-pill" style="display:none">🔥 0</div>
+  <div style="flex:1;text-align:center"><h1 class="app-title">Soma</h1></div>
+  <div style="width:70px;display:flex;justify-content:flex-end;align-items:center">
+    <div id="streak-pill" class="streak-pill" style="display:none">🔥 0</div>
+  </div>
 </div>
 
-<div class="cat-bar">
-  <div class="cat-bar-inner">
-    <button class="cat-btn" onclick="toggleCatDropdown()">Categories ▾</button>
+<div class="status-panel">
+  <div class="status-panel-top">
+    <button id="cat-btn" class="cat-btn" onclick="toggleCatDropdown()">All ▾</button>
     <div class="mode-toggle">
       <button class="mode-btn active" id="btn-flash" onclick="setMode('flash')">Flashcards</button>
       <button class="mode-btn" id="btn-quiz" onclick="setMode('quiz')">Quiz</button>
     </div>
     <div class="cat-dropdown" id="cat-dropdown"></div>
   </div>
+  <div class="stats-bar" id="stats-bar"></div>
 </div>
-
-<div class="stats-bar" id="stats-bar"></div>
 
 <div id="flashcard-mode"></div>
 <div id="quiz-mode" style="display:none"></div>
+
+<div id="bottom-bar" class="bottom-bar"></div>
 
 <script src="database.js"></script>
 <script src="app.js"></script>
