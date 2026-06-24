@@ -1,0 +1,176 @@
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  :root {
+    --bg:#2c3a47; --surface:#36464f; --edge:#1d2730; --border:#4a5b66;
+    --text:#e8eef2; --muted:#9fb0bd; --primary:#0891b2; --primary-dark:#0e7490;
+    --cyan:#4ccadf; --green:#4ade80;
+  }
+
+  /* shared phone shell */
+  .phone {
+    width: 300px; border-radius: 20px; overflow: hidden;
+    background: var(--bg); border: 2px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+  }
+  .phone-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    padding: 14px 16px 12px; display: flex; align-items: center;
+    justify-content: space-between;
+  }
+  .phone-header h1 { font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0; }
+  .phone-body { padding: 24px 16px; color: var(--text); min-height: 220px; }
+
+  /* profile grid */
+  .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+  .profile-tile {
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: 14px; padding: 16px 10px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+    cursor: pointer; text-align: center;
+  }
+  .profile-tile.active { border-color: var(--cyan); background: rgba(76,202,223,.08); }
+  .profile-tile.empty { border-style: dashed; opacity: .6; }
+  .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--primary);
+    color: #fff; font-size: .95rem; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; }
+  .avatar.empty { background: var(--border); font-size: 1.2rem; }
+  .p-name { font-size: .78rem; font-weight: 700; color: var(--text); }
+  .p-streak { font-size: .68rem; color: #fbbf24; font-weight: 700; }
+
+  /* create form */
+  .mock-input {
+    width: 100%; box-sizing: border-box;
+    background: var(--surface); border: 2px solid var(--border);
+    border-radius: 12px; padding: 11px 14px; color: var(--text);
+    font-size: .88rem; margin-bottom: 12px;
+  }
+  .mock-input::placeholder { color: var(--muted); }
+  .mock-btn {
+    width: 100%; padding: 12px; background: var(--primary); color: #fff;
+    border: 2px solid var(--primary); border-radius: 14px;
+    font-size: .88rem; font-weight: 700; cursor: pointer;
+  }
+  .who { font-size: 1rem; font-weight: 800; color: var(--text); margin-bottom: 4px; }
+  .sub { font-size: .75rem; color: var(--muted); }
+  .section-label { font-size: .62rem; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 10px; }
+</style>
+
+<h2>Welcome / Profile Select Screen</h2>
+<p class="subtitle">Two states: first-time setup (left) and returning user picker (right). Pick the layout style you prefer.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Full-screen takeover</h3>
+      <p>The entire screen is dedicated to profile selection — app content is hidden until a profile is chosen. Clean, focused, no distractions.</p>
+      <div style="display:flex; gap:14px; margin-top:14px; flex-wrap:wrap;">
+
+        <div>
+          <div class="section-label">First launch</div>
+          <div class="phone">
+            <div class="phone-header"><h1>💊 Pharmy</h1></div>
+            <div class="phone-body">
+              <div class="who">Welcome!</div>
+              <div class="sub" style="margin-bottom:18px">Create a profile to start tracking your progress.</div>
+              <input class="mock-input" placeholder="Enter your name…" />
+              <button class="mock-btn">Create Profile</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Returning user</div>
+          <div class="phone">
+            <div class="phone-header"><h1>💊 Pharmy</h1></div>
+            <div class="phone-body">
+              <div class="who">Who's studying?</div>
+              <div class="profile-grid">
+                <div class="profile-tile active">
+                  <div class="avatar">ER</div>
+                  <div class="p-name">Erick</div>
+                  <div class="p-streak">🔥 7</div>
+                </div>
+                <div class="profile-tile">
+                  <div class="avatar" style="background:#7c3aed">MR</div>
+                  <div class="p-name">Maria</div>
+                  <div class="p-streak">🔥 3</div>
+                </div>
+                <div class="profile-tile empty">
+                  <div class="avatar empty">+</div>
+                  <div class="p-name" style="color:var(--muted)">Add</div>
+                </div>
+                <div class="profile-tile empty" style="visibility:hidden"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Bottom sheet</h3>
+      <p>The app is visible in the background. A sheet slides up from the bottom for profile selection. Feels native on mobile — familiar iOS/Android pattern.</p>
+      <div style="display:flex; gap:14px; margin-top:14px; flex-wrap:wrap;">
+
+        <div>
+          <div class="section-label">First launch</div>
+          <div class="phone" style="position:relative; overflow:hidden">
+            <div class="phone-header"><h1>💊 Pharmy</h1></div>
+            <div class="phone-body" style="filter:blur(2px);opacity:.4;padding:12px">
+              <div style="height:12px;background:var(--surface);border-radius:6px;margin-bottom:8px"></div>
+              <div style="height:80px;background:var(--surface);border-radius:10px"></div>
+            </div>
+            <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-radius:16px 16px 0 0;padding:16px;border-top:2px solid var(--border)">
+              <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px"></div>
+              <div class="who" style="font-size:.9rem">Create a profile</div>
+              <div class="sub" style="margin-bottom:12px;font-size:.7rem">to track your progress</div>
+              <input class="mock-input" style="margin-bottom:8px" placeholder="Your name…" />
+              <button class="mock-btn" style="padding:10px">Create Profile</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="section-label">Switching profiles</div>
+          <div class="phone" style="position:relative; overflow:hidden">
+            <div class="phone-header">
+              <div style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:.9rem">ER</div>
+              <h1>💊 Pharmy</h1>
+              <div style="background:rgba(255,255,255,.18);border-radius:20px;padding:5px 10px;font-size:.78rem;font-weight:800;color:#fbbf24">🔥 7</div>
+            </div>
+            <div class="phone-body" style="filter:blur(2px);opacity:.4;padding:12px">
+              <div style="height:12px;background:var(--surface);border-radius:6px;margin-bottom:8px"></div>
+              <div style="height:80px;background:var(--surface);border-radius:10px"></div>
+            </div>
+            <div style="position:absolute;bottom:0;left:0;right:0;background:var(--surface);border-radius:16px 16px 0 0;padding:14px;border-top:2px solid var(--border)">
+              <div style="width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 12px"></div>
+              <div class="profile-grid" style="grid-template-columns:1fr 1fr;gap:8px">
+                <div class="profile-tile active" style="padding:12px 8px">
+                  <div class="avatar" style="width:36px;height:36px;font-size:.8rem">ER</div>
+                  <div class="p-name">Erick</div>
+                  <div class="p-streak">🔥 7</div>
+                </div>
+                <div class="profile-tile" style="padding:12px 8px">
+                  <div class="avatar" style="width:36px;height:36px;font-size:.8rem;background:#7c3aed">MR</div>
+                  <div class="p-name">Maria</div>
+                  <div class="p-streak">🔥 3</div>
+                </div>
+                <div class="profile-tile empty" style="padding:12px 8px">
+                  <div class="avatar empty" style="width:36px;height:36px">+</div>
+                  <div class="p-name" style="color:var(--muted)">Add</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>

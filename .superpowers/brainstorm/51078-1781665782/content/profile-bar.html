@@ -1,0 +1,99 @@
+<style>
+  .ph-demo { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin-bottom: 28px; }
+  .ph-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px; color: #9fb0bd; margin-bottom: 8px; }
+
+  /* Shared mock elements */
+  .mock-header {
+    background: linear-gradient(135deg,#0891b2,#0e7490);
+    color:#fff; padding:14px 16px 12px;
+    display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+  }
+  .mock-header h1 { font-size:1.2rem; font-weight:700; letter-spacing:-.3px; margin:0; }
+  .mock-sound { background:rgba(255,255,255,.22); border:none; border-radius:50%; width:38px; height:38px; font-size:1.1rem; cursor:pointer; color:#fff; display:flex;align-items:center;justify-content:center; flex-shrink:0; }
+  .mock-pill { background:rgba(255,255,255,.2); border-radius:20px; padding:4px 10px; font-size:.75rem; white-space:nowrap; }
+
+  /* Option A — Thin bar above */
+  .profile-bar-a {
+    background:#1d2730; padding:6px 16px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .profile-bar-a .pname { font-size:.78rem; font-weight:700; color:#e8eef2; display:flex; align-items:center; gap:6px; }
+  .profile-bar-a .streak { font-size:.78rem; font-weight:700; color:#f59e0b; display:flex; align-items:center; gap:3px; }
+  .profile-bar-a .pmenu { background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.15); border-radius:8px; color:#e8eef2; font-size:.72rem; font-weight:700; padding:3px 8px; cursor:pointer; }
+  .avatar-sm { width:22px; height:22px; border-radius:50%; background:#0891b2; color:#fff; font-size:.65rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+
+  /* Option B — Right side of existing header */
+  .profile-right { display:flex; align-items:center; gap:8px; }
+  .streak-pill { background:rgba(255,255,255,.18); border-radius:20px; padding:4px 10px; font-size:.75rem; font-weight:700; color:#fbbf24; white-space:nowrap; display:flex; align-items:center; gap:4px; }
+  .name-dropdown { background:rgba(255,255,255,.14); border:none; border-radius:20px; padding:4px 10px; font-size:.75rem; font-weight:700; color:#fff; cursor:pointer; white-space:nowrap; }
+
+  /* Option C — Avatar replaces left side */
+  .avatar-lg { width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,.22); color:#fff; font-size:.95rem; font-weight:800; display:flex; align-items:center; justify-content:center; flex-shrink:0; cursor:pointer; border:2px solid rgba(255,255,255,.3); }
+  .header-center { flex:1; text-align:center; }
+  .header-center h1 { font-size:1.2rem; font-weight:700; margin:0 0 1px; }
+  .header-center .streak-sub { font-size:.72rem; opacity:.85; color:#fbbf24; font-weight:700; }
+</style>
+
+<h2>Profile Header Layout</h2>
+<p class="subtitle">Three ways to surface the profile bar. Same Pharmy dark theme — pick the layout that feels right.</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Thin bar above the header</h3>
+      <p>A separate dark strip sits above the existing gradient header. Username, streak, and a profile menu button live there. The header itself is unchanged.</p>
+      <div class="ph-demo" style="margin-top:12px;border-radius:10px;overflow:hidden">
+        <div class="profile-bar-a">
+          <div class="pname"><div class="avatar-sm">ER</div> Erick</div>
+          <div class="streak">🔥 7 day streak</div>
+          <button class="pmenu">Switch ▾</button>
+        </div>
+        <div class="mock-header">
+          <button class="mock-sound">🔊</button>
+          <div style="flex:1;text-align:center"><h1>💊 Pharmy</h1></div>
+          <div class="mock-pill">12 known</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Integrated into the right side of the header</h3>
+      <p>The progress pill becomes a streak pill. A tappable name button with a dropdown arrow sits next to it. Sound button stays left. Title stays center.</p>
+      <div class="ph-demo" style="margin-top:12px;border-radius:10px;overflow:hidden">
+        <div class="mock-header">
+          <button class="mock-sound">🔊</button>
+          <div style="flex:1;text-align:center"><h1>💊 Pharmy</h1></div>
+          <div class="profile-right">
+            <div class="streak-pill">🔥 7</div>
+            <button class="name-dropdown">Erick ▾</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Avatar replaces sound button; streak under the title</h3>
+      <p>A circular avatar (initials) sits on the left — tapping it opens the profile switcher. The center shows the app title with the streak as a subtitle. Sound moves into the profile dropdown.</p>
+      <div class="ph-demo" style="margin-top:12px;border-radius:10px;overflow:hidden">
+        <div class="mock-header">
+          <div class="avatar-lg">ER</div>
+          <div class="header-center">
+            <h1>💊 Pharmy</h1>
+            <div class="streak-sub">🔥 7 day streak</div>
+          </div>
+          <div class="mock-pill" style="visibility:hidden">pad</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
