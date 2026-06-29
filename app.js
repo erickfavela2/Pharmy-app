@@ -1,6 +1,8 @@
 // ─── APP STATE ──────────────────────────────────────────────────────────────
 // CATS, CARDS, and QUIZ_QUESTIONS are defined in database.js (loaded first)
 let state = {
+  view: 'dashboard',
+  dashboardMode: null,
   cat: "All",
   mode: "flash",
   cardIndex: 0,
@@ -11,6 +13,8 @@ let state = {
   quizScore: 0,
   currentOpts: []
 };
+
+const PHYSEXAM_CATS = ["All", "Musculoskeletal", "Neurological", "Cardiovascular", "Respiratory", "Abdominal", "HEENT", "Skin & Wound"];
 
 // ─── STORAGE v2 ──────────────────────────────────────────────────────────────
 const AVATAR_COLORS=["#0891b2","#7c3aed","#059669","#dc2626","#d97706","#db2777"];
@@ -48,7 +52,7 @@ function toggleCatDropdown(){
 }
 
 document.addEventListener('click',function(e){
-  const bar = document.querySelector('.cat-bar');
+  const bar = document.querySelector('.status-panel');
   const dd = document.getElementById('cat-dropdown');
   if(bar && dd && !bar.contains(e.target)) dd.classList.remove('open');
 });
@@ -70,6 +74,7 @@ function renderStatsBar(){
 // ─── MODE TOGGLE ─────────────────────────────────────────────────────────────
 function setMode(m){
   state.mode=m;
+  state.view='content';
   document.getElementById('btn-flash').classList.toggle('active',m==='flash');
   document.getElementById('btn-quiz').classList.toggle('active',m==='quiz');
   document.getElementById('flashcard-mode').style.display=m==='flash'?'':'none';
@@ -410,10 +415,18 @@ function profileInitials(name){
 
 function renderHeader(){
   const p=activeProfile();
+  const avatarBtn=document.getElementById('avatar-btn');
   const circle=document.getElementById('avatar-circle');
-  if(circle){ circle.textContent=p?profileInitials(p.name):'?'; circle.style.background=p?p.color:AVATAR_COLORS[0]; }
   const pill=document.getElementById('streak-pill');
-  if(pill){ if(p&&p.streak>0){ pill.textContent='🔥 '+p.streak; pill.style.display=''; } else { pill.style.display='none'; } }
+  if(state.view==='content'||state.view==='physexam'){
+    if(avatarBtn){ avatarBtn.onclick=null; avatarBtn.onclick=goBack; avatarBtn.style.background='none'; avatarBtn.style.border='none'; avatarBtn.style.padding='0'; }
+    if(circle){ circle.innerHTML='&larr;'; circle.style.background='var(--surface)'; circle.style.color='var(--text)'; }
+    if(pill) pill.style.display='none';
+  } else {
+    if(avatarBtn){ avatarBtn.onclick=toggleProfileDropdown; avatarBtn.style.background=''; avatarBtn.style.border=''; avatarBtn.style.padding=''; }
+    if(circle){ circle.textContent=p?profileInitials(p.name):'?'; circle.style.background=p?p.color:AVATAR_COLORS[0]; circle.style.color='#fff'; }
+    if(pill){ if(p&&p.streak>0){ pill.textContent='🔥 '+p.streak; pill.style.display=''; } else { pill.style.display='none'; } }
+  }
 }
 
 function toggleProfileDropdown(){
@@ -462,9 +475,7 @@ function selectProfile(id){
   if(p){ const today=todayStr(); if((p.todayCountDate||'')!==today){ p.todayFlips=0; p.todayAnswers=0; p.todayCountDate=today; } }
   saveV2(d);
   hideProfileOverlay();
-  renderHeader();
-  renderStatsBar();
-  renderCurrentMode();
+  showDashboard();
 }
 
 function createProfile(name){
@@ -481,9 +492,7 @@ function createProfile(name){
   d.activeProfile=id;
   saveV2(d);
   hideProfileOverlay();
-  renderHeader();
-  renderStatsBar();
-  renderCurrentMode();
+  showDashboard();
 }
 
 function showProfileOverlay(){
@@ -539,16 +548,142 @@ function showAddProfileForm(){
   if(form){ form.style.display=''; const inp=document.getElementById('profile-name-input'); if(inp) inp.focus(); }
 }
 
+// ─── DASHBOARD ───────────────────────────────────────────────────────────────
+function showDashboard(){
+  state.view='dashboard';
+  state.dashboardMode=null;
+  document.getElementById('dashboard').style.display='';
+  document.getElementById('status-panel').style.display='none';
+  document.getElementById('flashcard-mode').style.display='none';
+  document.getElementById('quiz-mode').style.display='none';
+  const bb=document.getElementById('bottom-bar'); if(bb) bb.innerHTML='';
+  renderHeader();
+  renderDashboard();
+}
+
+function renderDashboard(){
+  const dash=document.getElementById('dashboard');
+  const modes=[
+    {key:'flash', icon:'🃏', label:'Flashcards'},
+    {key:'quiz',  icon:'📝', label:'Quizzes'},
+    {key:'physexam', icon:'🩺', label:'Physical\nExams'},
+  ];
+  const modeGrid=`<div class="dash-mode-grid">${modes.map(m=>`
+    <div class="dash-mode-card${state.dashboardMode===m.key?' active':''}" onclick="selectDashboardMode('${m.key}')">
+      <div class="dash-mode-icon">${m.icon}</div>
+      <div class="dash-mode-label">${m.label.replace('\n','<br>')}</div>
+    </div>`).join('')}</div>`;
+
+  let catsHtml='';
+  if(state.dashboardMode==='flash'){
+    const flashCats=CATS.filter(c=>{
+      if(c==='All') return true;
+      if(c==='Sick Call') return false;
+      return CARDS.filter(x=>x.cat===c).length>0;
+    });
+    catsHtml=`<div class="dash-cats"><div class="dash-section-label">Choose a Category</div>`
+      +flashCats.map(c=>{
+        const count=c==='All'?CARDS.length:CARDS.filter(x=>x.cat===c).length;
+        return `<div class="dash-cat-row" onclick="enterContent('flash','${c.replace(/'/g,"\\'")}')">`
+          +`<span>${c}</span>`
+          +`<div class="dash-cat-right"><span class="dash-cat-meta">${count} cards</span><span class="dash-cat-arrow">›</span></div>`
+          +`</div>`;
+      }).join('')+'</div>';
+  } else if(state.dashboardMode==='quiz'){
+    const validCats=CATS.filter(c=>{
+      if(c==='All') return true;
+      if(c==='Sick Call') return QUIZ_QUESTIONS.filter(q=>q.sc).length>0;
+      return QUIZ_QUESTIONS.filter(q=>q.cat===c).length>0;
+    });
+    catsHtml=`<div class="dash-cats"><div class="dash-section-label">Choose a Category</div>`
+      +validCats.map(c=>{
+        const count=c==='All'?QUIZ_QUESTIONS.length:c==='Sick Call'?QUIZ_QUESTIONS.filter(q=>q.sc).length:QUIZ_QUESTIONS.filter(q=>q.cat===c).length;
+        return `<div class="dash-cat-row" onclick="enterContent('quiz','${c.replace(/'/g,"\\'")}')">`
+          +`<span>${c}</span>`
+          +`<div class="dash-cat-right"><span class="dash-cat-meta">${count} questions</span><span class="dash-cat-arrow">›</span></div>`
+          +`</div>`;
+      }).join('')+'</div>';
+  } else if(state.dashboardMode==='physexam'){
+    catsHtml=`<div class="dash-cats"><div class="dash-section-label">Choose a Category</div>`
+      +PHYSEXAM_CATS.map(c=>`<div class="dash-cat-row" onclick="enterContent('physexam','${c.replace(/'/g,"\\'")}')">`
+        +`<span>${c}</span>`
+        +`<div class="dash-cat-right"><span class="dash-cat-meta">Coming soon</span><span class="dash-cat-arrow">›</span></div>`
+        +`</div>`).join('')+'</div>';
+  }
+
+  dash.innerHTML=`<div class="dash-section-label">Modes</div>${modeGrid}${catsHtml}`;
+}
+
+function selectDashboardMode(key){
+  state.dashboardMode=key;
+  renderDashboard();
+}
+
+function enterContent(mode, cat){
+  if(mode==='physexam'){
+    state.view='physexam';
+    state.dashboardMode='physexam';
+    document.getElementById('dashboard').style.display='none';
+    document.getElementById('status-panel').style.display='none';
+    document.getElementById('flashcard-mode').style.display='none';
+    document.getElementById('quiz-mode').style.display='none';
+    const bb=document.getElementById('bottom-bar'); if(bb) bb.innerHTML='';
+    renderHeader();
+    renderPhysExamPlaceholder(cat);
+    return;
+  }
+  state.view='content';
+  state.cat=cat;
+  state.cardIndex=0;
+  state.flipped=false;
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('status-panel').style.display='';
+  updateCatBtn();
+  renderTabs();
+  renderStatsBar();
+  renderHeader();
+  if(mode==='flash'){
+    state.mode='flash';
+    document.getElementById('flashcard-mode').style.display='';
+    document.getElementById('quiz-mode').style.display='none';
+    document.getElementById('btn-flash').classList.add('active');
+    document.getElementById('btn-quiz').classList.remove('active');
+    const bb=document.getElementById('bottom-bar'); if(bb) bb.style.display='';
+    renderFlash();
+  } else {
+    state.mode='quiz';
+    document.getElementById('quiz-mode').style.display='';
+    document.getElementById('flashcard-mode').style.display='none';
+    document.getElementById('btn-quiz').classList.add('active');
+    document.getElementById('btn-flash').classList.remove('active');
+    const bb=document.getElementById('bottom-bar'); if(bb) bb.style.display='none';
+    state.quizIndex=0; state.quizScore=0; state.quizQuestions=buildQuiz();
+    renderQuiz();
+  }
+}
+
+function goBack(){
+  showDashboard();
+}
+
+function renderPhysExamPlaceholder(cat){
+  const fc=document.getElementById('flashcard-mode');
+  fc.style.display='';
+  fc.innerHTML=`<div class="physexam-placeholder">
+    <div class="physexam-icon">🩺</div>
+    <div class="physexam-title">Physical Exams</div>
+    <div class="physexam-cat">${cat}</div>
+    <div class="physexam-body">Advanced diagnostic and orthopedic assessment reasoning is coming soon. This module will include systematic physical exam frameworks, clinical reasoning pathways, and NCLEX-style case simulations.</div>
+    <button class="physexam-back-btn" onclick="showDashboard()">← Back to Dashboard</button>
+  </div>`;
+}
+
 function initProfiles(){
   const d=loadV2();
   if(!d||!d.activeProfile){ showProfileOverlay(); }
-  else { hideProfileOverlay(); renderHeader(); }
+  else { hideProfileOverlay(); showDashboard(); }
 }
 
 // ─── INIT ────────────────────────────────────────────────────────────────────
 initProfiles();
-updateCatBtn();
-renderTabs();
-renderStatsBar();
-renderFlash();
 updateSoundBtn();
