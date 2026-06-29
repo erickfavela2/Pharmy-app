@@ -563,10 +563,13 @@ function showDashboard(){
 
 function renderDashboard(){
   const dash=document.getElementById('dashboard');
+  const ICON_FLASH=`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>`;
+  const ICON_QUIZ=`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>`;
+  const ICON_PHYSEXAM=`<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>`;
   const modes=[
-    {key:'flash', icon:'🃏', label:'Flashcards'},
-    {key:'quiz',  icon:'📝', label:'Quizzes'},
-    {key:'physexam', icon:'🩺', label:'Physical\nExams'},
+    {key:'flash', icon:ICON_FLASH, label:'Flashcards'},
+    {key:'quiz',  icon:ICON_QUIZ, label:'Quizzes'},
+    {key:'physexam', icon:ICON_PHYSEXAM, label:'Physical\nExams'},
   ];
   const modeGrid=`<div class="dash-mode-grid">${modes.map(m=>`
     <div class="dash-mode-card${state.dashboardMode===m.key?' active':''}" onclick="selectDashboardMode('${m.key}')">
@@ -670,7 +673,7 @@ function renderPhysExamPlaceholder(cat){
   const fc=document.getElementById('flashcard-mode');
   fc.style.display='';
   fc.innerHTML=`<div class="physexam-placeholder">
-    <div class="physexam-icon">🩺</div>
+    <div class="physexam-icon"><svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
     <div class="physexam-title">Physical Exams</div>
     <div class="physexam-cat">${cat}</div>
     <div class="physexam-body">Advanced diagnostic and orthopedic assessment reasoning is coming soon. This module will include systematic physical exam frameworks, clinical reasoning pathways, and NCLEX-style case simulations.</div>
