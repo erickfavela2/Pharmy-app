@@ -274,12 +274,22 @@ function checkMulti(){
 
 
 let _soundOn=true;
+let _audioCtx=null;
 
-function _makeCtx(){ return new(window.AudioContext||window.webkitAudioContext)(); }
+function _ensureAudio(){
+  if(!_audioCtx){
+    try{ _audioCtx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
+  }
+  if(_audioCtx.state==='suspended') _audioCtx.resume().catch(function(){});
+}
+['touchstart','touchend','click'].forEach(function(ev){
+  document.addEventListener(ev,_ensureAudio,{passive:true});
+});
 
 function _playCorrectSound(){
   try{
-    const ctx=_makeCtx(); const t=ctx.currentTime;
+    const ctx=_audioCtx; if(!ctx||ctx.state!=='running') return;
+    const t=ctx.currentTime;
     [0,0.18].forEach(function(delay,i){
       const osc=ctx.createOscillator(),gain=ctx.createGain();
       osc.connect(gain); gain.connect(ctx.destination);
@@ -290,13 +300,12 @@ function _playCorrectSound(){
       gain.gain.exponentialRampToValueAtTime(0.001,t+delay+0.18);
       osc.start(t+delay); osc.stop(t+delay+0.2);
     });
-    setTimeout(function(){ ctx.close().catch(function(){}); },600);
-    if(navigator.mediaSession) navigator.mediaSession.playbackState='none';
   }catch(e){}
 }
 function _playWrongSound(){
   try{
-    const ctx=_makeCtx(); const t=ctx.currentTime;
+    const ctx=_audioCtx; if(!ctx||ctx.state!=='running') return;
+    const t=ctx.currentTime;
     const osc=ctx.createOscillator(),gain=ctx.createGain();
     osc.connect(gain); gain.connect(ctx.destination);
     osc.type='sine';
@@ -305,8 +314,6 @@ function _playWrongSound(){
     gain.gain.setValueAtTime(0.35,t);
     gain.gain.exponentialRampToValueAtTime(0.001,t+0.35);
     osc.start(t); osc.stop(t+0.35);
-    setTimeout(function(){ ctx.close().catch(function(){}); },600);
-    if(navigator.mediaSession) navigator.mediaSession.playbackState='none';
   }catch(e){}
 }
 function toggleSound(){
@@ -320,8 +327,10 @@ function updateSoundBtn(){
 }
 function playSound(correct){
   if(!_soundOn) return;
+  _ensureAudio();
   if(correct) _playCorrectSound(); else _playWrongSound();
 }
+
 
 
 
