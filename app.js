@@ -280,19 +280,28 @@ function _ensureAudio(){
   if(!_audioCtx){
     try{ _audioCtx=new(window.AudioContext||window.webkitAudioContext)(); }catch(e){ return; }
   }
-  if(_audioCtx.state==='suspended') _audioCtx.resume().catch(function(){});
+  if(_audioCtx.state!=='running'){
+    // iOS requires scheduling real audio (even silent) within a gesture to unlock.
+    // A 1-sample buffer fulfills this without being audible.
+    try{
+      var b=_audioCtx.createBuffer(1,1,_audioCtx.sampleRate);
+      var s=_audioCtx.createBufferSource();
+      s.buffer=b; s.connect(_audioCtx.destination); s.start(0);
+    }catch(e){}
+    _audioCtx.resume().catch(function(){});
+  }
 }
-['touchstart','touchend','click'].forEach(function(ev){
-  document.addEventListener(ev,_ensureAudio,{passive:true});
+['touchstart','click'].forEach(function(ev){
+  document.addEventListener(ev,_ensureAudio,{passive:true,capture:true});
 });
 
 function _doPlay(fn){
   _ensureAudio();
   if(!_audioCtx) return;
   if(_audioCtx.state==='running'){
-    fn(_audioCtx);
+    try{ fn(_audioCtx); }catch(e){}
   } else {
-    _audioCtx.resume().then(function(){ fn(_audioCtx); }).catch(function(){});
+    _audioCtx.resume().then(function(){ try{ fn(_audioCtx); }catch(e){} }).catch(function(){});
   }
 }
 function _correctFn(ctx){
