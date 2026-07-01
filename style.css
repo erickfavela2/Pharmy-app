@@ -174,12 +174,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 /* DASHBOARD */
 .dashboard{padding:20px 14px 60px;overflow-y:auto}
 .dash-section-label{font-size:.65rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
-.dash-mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
-.dash-mode-card{background:var(--surface);border:2px solid var(--border);border-radius:16px;box-shadow:var(--shadow-sm);padding:18px 8px 14px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:transform .1s,box-shadow .1s,background .15s}
+.dash-mode-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:4px;max-width:550px;margin-left:auto;margin-right:auto}
+@media(max-width:599px){.dash-mode-grid{max-width:100%}}
+.dash-mode-card{background:var(--surface);border:2px solid var(--border);border-radius:16px;box-shadow:var(--shadow-sm);padding:16px 20px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:14px;cursor:pointer;transition:transform .1s,box-shadow .1s,background .15s}
 .dash-mode-card:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--border)}
 .dash-mode-card.active{background:var(--primary)}
-.dash-mode-icon{display:flex;align-items:center;justify-content:center;color:var(--text)}
-.dash-mode-label{font-size:.74rem;font-weight:800;text-align:center;color:var(--text);line-height:1.3;letter-spacing:-.2px}
+.dash-mode-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text)}
+.dash-mode-label{font-size:.9rem;font-weight:800;text-align:center;color:var(--text);line-height:1.3;letter-spacing:-.2px}
 .dash-cats{margin-top:24px}
 .dash-cat-row{background:var(--surface);border:2px solid var(--border);border-radius:14px;box-shadow:var(--shadow-sm);padding:15px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;cursor:pointer;transition:transform .1s,box-shadow .1s;font-size:.9rem;font-weight:700;color:var(--text)}
 .dash-cat-row:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--border)}
