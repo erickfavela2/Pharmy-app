@@ -289,7 +289,7 @@ function _makeEl(src,loop){
 }
 function _initEls(){
   if(_chimeEl) return;
-  _chimeEl=_makeEl(_AUD.chime,false);
+  _chimeEl=_makeEl('mixkit-correct-answer-notification-947.wav',false);
   _thudEl=_makeEl(_AUD.thud,false);
   _silentEl=_makeEl(_AUD.silent,true);
 }
