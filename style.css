@@ -175,7 +175,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .dashboard{padding:20px 14px 60px;overflow-y:auto}
 .dash-section-label{font-size:.65rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
 .dash-mode-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:4px;max-width:550px;margin-left:auto;margin-right:auto}
-@media(max-width:599px){.dash-mode-grid{max-width:100%}}
+@media(max-width:599px){.dash-mode-grid{max-width:100%}.dash-mode-card{padding:55px 20px}}
 .dash-mode-card{background:var(--surface);border:2px solid var(--border);border-radius:16px;box-shadow:var(--shadow-sm);padding:35px 20px;display:flex;flex-direction:row;align-items:center;justify-content:center;gap:14px;cursor:pointer;transition:transform .1s,box-shadow .1s,background .15s}
 .dash-mode-card:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--border)}
 .dash-mode-card.active{background:var(--primary)}
