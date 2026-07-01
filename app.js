@@ -326,9 +326,26 @@ function updateSoundBtn(){
   const b=document.getElementById('sound-btn');
   if(b){ b.textContent=_soundOn?'🔊':'🔇'; b.setAttribute('aria-label',_soundOn?'Sound on, tap to mute':'Sound off, tap to enable'); }
 }
+function _playCorrectSound(){
+  try{
+    const ctx=_getCtx();
+    if(ctx.state==='suspended') ctx.resume();
+    [0,0.18].forEach(function(delay,i){
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type='sine';
+      osc.frequency.setValueAtTime(i===0?880:1175,ctx.currentTime+delay);
+      gain.gain.setValueAtTime(0,ctx.currentTime+delay);
+      gain.gain.linearRampToValueAtTime(0.28,ctx.currentTime+delay+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.18);
+      osc.start(ctx.currentTime+delay);
+      osc.stop(ctx.currentTime+delay+0.2);
+    });
+  }catch(e){}
+}
 function playSound(correct){
   if(!_soundOn) return;
-  if(correct){ if(_correctBuffer) _playBuffer(_correctBuffer); }
+  if(correct){ if(_correctBuffer) _playBuffer(_correctBuffer); else _playCorrectSound(); }
   else _playWrongSound();
 }
 
