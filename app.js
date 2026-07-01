@@ -274,51 +274,49 @@ function checkMulti(){
 
 
 let _soundOn=true;
-let _audioCtx=null,_correctBuffer=null;
+let _audioCtx=null;
 function _getCtx(){
   if(!_audioCtx) _audioCtx=new(window.AudioContext||window.webkitAudioContext)();
   return _audioCtx;
 }
-async function _loadCorrectSound(){
-  try{
-    const ctx=_getCtx();
-    const res=await fetch('mixkit-correct-answer-notification-947.wav');
-    const buf=await res.arrayBuffer();
-    _correctBuffer=await ctx.decodeAudioData(buf);
-  }catch(e){}
+function _unlockCtx(){
+  const ctx=_getCtx();
+  if(ctx.state==='suspended') ctx.resume().catch(function(){});
 }
-_loadCorrectSound();
-function _playBuffer(buf){
+['touchend','mousedown','click'].forEach(function(ev){
+  document.addEventListener(ev,_unlockCtx,{passive:true});
+});
+function _playCorrectSound(){
   try{
-    const ctx=_getCtx();
-    if(ctx.state==='suspended') ctx.resume();
-    const src=ctx.createBufferSource();
-    src.buffer=buf;
-    src.connect(ctx.destination);
-    src.start(0);
+    const ctx=_getCtx(); const t=ctx.currentTime;
+    [0,0.18].forEach(function(delay,i){
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type='sine';
+      osc.frequency.setValueAtTime(i===0?880:1175,t+delay);
+      gain.gain.setValueAtTime(0,t+delay);
+      gain.gain.linearRampToValueAtTime(0.28,t+delay+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001,t+delay+0.18);
+      osc.start(t+delay); osc.stop(t+delay+0.2);
+    });
   }catch(e){}
 }
 function _playWrongSound(){
   try{
-    const ctx=_getCtx();
-    if(ctx.state==='suspended') ctx.resume();
-    const osc=ctx.createOscillator();
-    const gain=ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+    const ctx=_getCtx(); const t=ctx.currentTime;
+    const osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
     osc.type='sine';
-    osc.frequency.setValueAtTime(350,ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(180,ctx.currentTime+0.35);
-    gain.gain.setValueAtTime(0.35,ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.35);
-    osc.start();
-    osc.stop(ctx.currentTime+0.35);
+    osc.frequency.setValueAtTime(350,t);
+    osc.frequency.exponentialRampToValueAtTime(180,t+0.35);
+    gain.gain.setValueAtTime(0.35,t);
+    gain.gain.exponentialRampToValueAtTime(0.001,t+0.35);
+    osc.start(t); osc.stop(t+0.35);
   }catch(e){}
 }
 function toggleSound(){
   _soundOn=!_soundOn;
-  const ctx=_getCtx();
-  if(ctx.state==='suspended') ctx.resume();
+  _unlockCtx();
   updateSoundBtn();
   if(_soundOn) playSound(true);
 }
@@ -326,28 +324,11 @@ function updateSoundBtn(){
   const b=document.getElementById('sound-btn');
   if(b){ b.textContent=_soundOn?'🔊':'🔇'; b.setAttribute('aria-label',_soundOn?'Sound on, tap to mute':'Sound off, tap to enable'); }
 }
-function _playCorrectSound(){
-  try{
-    const ctx=_getCtx();
-    if(ctx.state==='suspended') ctx.resume();
-    [0,0.18].forEach(function(delay,i){
-      const osc=ctx.createOscillator(),gain=ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.type='sine';
-      osc.frequency.setValueAtTime(i===0?880:1175,ctx.currentTime+delay);
-      gain.gain.setValueAtTime(0,ctx.currentTime+delay);
-      gain.gain.linearRampToValueAtTime(0.28,ctx.currentTime+delay+0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+delay+0.18);
-      osc.start(ctx.currentTime+delay);
-      osc.stop(ctx.currentTime+delay+0.2);
-    });
-  }catch(e){}
-}
 function playSound(correct){
   if(!_soundOn) return;
-  if(correct){ if(_correctBuffer) _playBuffer(_correctBuffer); else _playCorrectSound(); }
-  else _playWrongSound();
+  if(correct) _playCorrectSound(); else _playWrongSound();
 }
+
 
 
 function answerQuiz(optIdx){
