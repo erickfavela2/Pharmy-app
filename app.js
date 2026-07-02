@@ -105,36 +105,73 @@ function renderFlash(){
   const nursingList = card.nursing.length? card.nursing.map(n=>`<li style="margin-bottom:4px">${n}</li>`).join(''):'';
   const pedList = card.patientEd.length? card.patientEd.map(p=>`<li style="margin-bottom:4px">${p}</li>`).join(''):'';
 
-  const clinicalBack = card.clinical? `<div class="card-back-reveal">
+  const showClass = card.drugClass && card.drugClass!=='Pharmacology Concept'&&card.drugClass!=='Antibiotic Overview'&&card.drugClass!=='Antibiotic Concept'&&card.drugClass!=='Diagnostic Concept'&&card.drugClass!=='Infectious Disease Concept'&&card.drugClass!=='Cardiovascular Concept (Side Effect)'&&card.drugClass!=='Cardiovascular Concept (Complication)'&&card.drugClass!=='Antihypertensive Overview';
+
+  const flagBtn = `<div class="flag-row"><button class="flag-btn${flagged?' flagged':''}" onclick="toggleFlagCard('${card.id}')">⚑ ${flagged?'Flagged':'Flag for Review'}</button></div>`;
+
+  const backHeader = `
+  <div class="card-back-header">
+    <h3 class="back-card-title">${card.title}</h3>
+    <button class="back-flip-btn" onclick="flipCard()">↩ flip back</button>
+  </div>`;
+
+  // Clinical cards (Ottawa Rules, Physical Exam checklists, etc.) — flat layout
+  const clinicalBack = card.clinical ? `${backHeader}
+  <div class="card-back-reveal">
     ${card.intro?`<div class="section-body" style="margin-bottom:12px">${card.intro}</div>`:''}
     ${(card.groups||[]).map(g=>`<div class="section"><div class="section-title">${g.label}</div><ul class="crit-list">${g.items.map(i=>`<li>${i}</li>`).join('')}</ul></div>`).join('')}
     ${card.note?`<div class="section"><div class="section-title">Clinical Pearl</div><div class="crit-note">🧠 ${card.note}</div></div>`:''}
-    <div class="flag-row"><button class="flag-btn${flagged?' flagged':''}" onclick="toggleFlagCard('${card.id}')">⚑ ${flagged?'Flagged':'Flag for Review'}</button></div>
-  </div>`:'';
+    ${flagBtn}
+  </div>` : null;
 
-  document.getElementById('flashcard-mode').innerHTML = `
-<div class="card-counter">${idx+1} / ${cards.length}</div>
-<div class="soma-card">
-  <div class="card-front-banner">
-    <div class="banner-cat-label">${card.cat}</div>
-    <h2 class="banner-title">${card.title}</h2>
-    ${card.subtitle?`<div class="banner-subtitle">${card.subtitle}</div>`:''}
-    ${card.drugClass && card.drugClass!=='Pharmacology Concept'&&card.drugClass!=='Antibiotic Overview'&&card.drugClass!=='Antibiotic Concept'&&card.drugClass!=='Diagnostic Concept'&&card.drugClass!=='Infectious Disease Concept'&&card.drugClass!=='Cardiovascular Concept (Side Effect)'&&card.drugClass!=='Cardiovascular Concept (Complication)'&&card.drugClass!=='Antihypertensive Overview'?`<div class="banner-class">Class: ${card.drugClass}</div>`:''}
-    ${!state.flipped?`<button class="reveal-btn" onclick="flipCard()">Reveal Answer ▼</button>`:''}
+  // Drug cards — tabbed layout
+  const tabPanes = !card.clinical ? `${backHeader}
+  <div class="back-tabs-row">
+    <button class="back-tab active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+    <button class="back-tab" data-tab="uses" onclick="switchTab('uses')">Uses</button>
+    <button class="back-tab" data-tab="side-fx" onclick="switchTab('side-fx')">Side FX</button>
+    <button class="back-tab" data-tab="nursing" onclick="switchTab('nursing')">Nursing</button>
+    <button class="back-tab" data-tab="pt-ed" onclick="switchTab('pt-ed')">Pt Ed</button>
   </div>
-  ${state.flipped?(card.clinical?clinicalBack:`<div class="card-back-reveal">
+  <div class="back-tab-pane" data-pane="overview">
     ${card.generics.length||card.trades.length?`<div class="section"><div class="section-title">Drug Names</div>${genericPills}${tradePills}</div>`:''}
     ${card.drugClass?`<div class="section"><div class="section-title">Drug Class</div><div class="section-body">${card.drugClass}</div></div>`:''}
     ${card.suffix?`<div class="section"><div class="section-title">Suffix / Prefix</div>${suffixBox}</div>`:''}
     <div class="section"><div class="section-title">Mechanism of Action</div><div class="section-body">${card.mechanism}</div></div>
-    ${card.uses.length?`<div class="section"><div class="section-title">Therapeutic Uses</div>${usePills}</div>`:''}
-    ${card.sideEffects.length?`<div class="section"><div class="section-title">⚠️ Must-Know Side Effects</div>${sePills}</div>`:''}
-    ${card.patientEd.length?`<div class="section"><div class="section-title">Patient Education</div><ul style="padding-left:16px;font-size:.82rem;line-height:1.55">${pedList}</ul></div>`:''}
-    ${card.nursing.length?`<div class="section"><div class="section-title">Nursing Considerations</div><ul style="padding-left:16px;font-size:.82rem;line-height:1.55">${nursingList}</ul></div>`:''}
+    ${flagBtn}
+  </div>
+  <div class="back-tab-pane" data-pane="uses" style="display:none">
+    ${card.uses.length?`<div class="section"><div class="section-title">Therapeutic Uses</div>${usePills}</div>`:`<div class="tab-empty">No uses listed for this card.</div>`}
+    ${flagBtn}
+  </div>
+  <div class="back-tab-pane" data-pane="side-fx" style="display:none">
+    ${card.sideEffects.length?`<div class="section"><div class="section-title">⚠️ Must-Know Side Effects</div>${sePills}</div>`:`<div class="tab-empty">No side effects listed.</div>`}
+    ${flagBtn}
+  </div>
+  <div class="back-tab-pane" data-pane="nursing" style="display:none">
+    ${card.nursing.length?`<div class="section"><div class="section-title">Nursing Considerations</div><ul style="padding-left:16px;font-size:.82rem;line-height:1.55">${nursingList}</ul></div>`:`<div class="tab-empty">No nursing notes listed.</div>`}
+    ${flagBtn}
+  </div>
+  <div class="back-tab-pane" data-pane="pt-ed" style="display:none">
+    ${card.patientEd.length?`<div class="section"><div class="section-title">Patient Education</div><ul style="padding-left:16px;font-size:.82rem;line-height:1.55">${pedList}</ul></div>`:`<div class="tab-empty">No patient education listed.</div>`}
     ${card.mnemonic?`<div class="section"><div class="section-title">Mnemonic / Memory Tip</div>${mnemonicBox}</div>`:''}
-    <div class="flag-row"><button class="flag-btn${flagged?' flagged':''}" onclick="toggleFlagCard('${card.id}')">⚑ ${flagged?'Flagged':'Flag for Review'}</button></div>
-  </div>`):''}
-</div>`;
+    ${flagBtn}
+  </div>` : null;
+
+  document.getElementById('flashcard-mode').innerHTML = `
+<div class="card-counter">${idx+1} / ${cards.length}</div>
+<div class="soma-card">
+  ${!state.flipped ? `
+  <div class="card-front-banner" onclick="flipCard()">
+    <div class="banner-cat-label">${card.cat}</div>
+    <h2 class="banner-title">${card.title}</h2>
+    ${card.subtitle?`<div class="banner-subtitle">${card.subtitle}</div>`:''}
+    ${showClass?`<div class="banner-class">Class: ${card.drugClass}</div>`:''}
+    <button class="reveal-btn" onclick="event.stopPropagation();flipCard()">Flip to reveal ↻</button>
+  </div>
+  ` : (card.clinical ? clinicalBack : tabPanes)}
+</div>
+<div class="flip-hint">tap card to flip</div>`;
   renderBottomBar(card, known);
 }
 
@@ -155,6 +192,10 @@ function renderBottomBar(card, known){
 </div>`;
 }
 function goCard(i){ state.cardIndex=i; state.flipped=false; renderFlash(); }
+function switchTab(name){
+  document.querySelectorAll('.back-tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));
+  document.querySelectorAll('.back-tab-pane').forEach(p=>{ p.style.display=p.dataset.pane===name?'':'none'; });
+}
 function toggleKnown(id){ const st=getStore(); st['known_'+id]=!st['known_'+id]; saveStore(st); renderFlash(); renderStatsBar(); renderHeader(); }
 function shuffleCards(){
   // Randomize current index
