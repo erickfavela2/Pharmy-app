@@ -183,12 +183,16 @@ function renderBottomBar(card, known){
   if(!bb) return;
   if(!card){ bb.innerHTML=''; return; }
   bb.innerHTML=`<div class="bottom-bar-nav">
-  <button class="nav-btn" onclick="prevCard()">← Prev</button>
+  <button class="nav-circle-btn" onclick="prevCard()" aria-label="Previous card">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
   <button class="known-btn${known?' known':''}" onclick="toggleKnown('${card.id}')">${known?'✓ Known':'Mark Known'}</button>
-  <button class="nav-btn" onclick="nextCard()">Next →</button>
+  <button class="nav-circle-btn" onclick="nextCard()" aria-label="Next card">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+  </button>
 </div>
 <div class="bottom-bar-secondary">
-  <button class="shuffle-btn" onclick="shuffleCards()">🔀 Shuffle</button>
+  <button class="shuffle-btn" onclick="shuffleCards()">Shuffle</button>
 </div>`;
 }
 function goCard(i){ state.cardIndex=i; state.flipped=false; renderFlash(); }
